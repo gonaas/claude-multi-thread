@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Cleanup temporary directories created by claude-multi-branch
+
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${BLUE}🧹 Searching for temporary claude-multi-branch directories...${NC}"
+
+# Find temporary directories
+TEMP_DIRS=$(find /tmp -maxdepth 1 -type d -name "claude-multi-branch-*" 2>/dev/null)
+
+if [ -z "$TEMP_DIRS" ]; then
+    echo -e "${GREEN}✓ No temporary directories to cleanup${NC}"
+    exit 0
+fi
+
+echo -e "${BLUE}Directories found:${NC}"
+echo "$TEMP_DIRS" | while read dir; do
+    SIZE=$(du -sh "$dir" 2>/dev/null | cut -f1)
+    echo -e "  ${RED}•${NC} $dir (${SIZE})"
+done
+
+echo ""
+echo -e "${BLUE}Delete all these directories? (y/N)${NC}"
+read -n 1 confirm
+echo
+
+if [[ $confirm =~ ^[Yy]$ ]]; then
+    echo "$TEMP_DIRS" | while read dir; do
+        rm -rf "$dir"
+        echo -e "${GREEN}✓${NC} Deleted: $dir"
+    done
+    echo -e "${GREEN}✓ Cleanup completed${NC}"
+else
+    echo -e "${BLUE}Cleanup cancelled${NC}"
+fi

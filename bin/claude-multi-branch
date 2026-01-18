@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# Claude Code Multi-Branch Opener
+# Usage: claude-multi-branch <branch-name> [repo-path]
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check arguments
+if [ -z "$1" ]; then
+    echo -e "${RED}Error: You must specify a branch${NC}"
+    echo "Usage: claude-multi-branch <branch-name> [repo-path]"
+    echo "Example: claude-multi-branch feature/new-feature"
+    echo "         claude-multi-branch main ~/projects/my-app"
+    exit 1
+fi
+
+BRANCH_NAME="$1"
+REPO_PATH="${2:-.}"  # If not specified, use current directory
+
+# Verify we're in a git repo
+if [ ! -d "$REPO_PATH/.git" ]; then
+    echo -e "${RED}Error: $REPO_PATH is not a git repository${NC}"
+    exit 1
+fi
+
+# Get repo information
+cd "$REPO_PATH"
+REPO_URL=$(git config --get remote.origin.url)
+REPO_NAME=$(basename "$REPO_PATH")
+
+echo -e "${BLUE}📦 Repository:${NC} $REPO_NAME"
+echo -e "${BLUE}🌿 Branch:${NC} $BRANCH_NAME"
+
+# Create temporary directory
+TEMP_DIR="/tmp/claude-multi-branch-${REPO_NAME}-${BRANCH_NAME}-$$"
+echo -e "${BLUE}📁 Creating temporary clone at:${NC} $TEMP_DIR"
+
+# Clone repo with shallow clone for speed
+echo -e "${BLUE}⬇️  Cloning repository...${NC}"
+git clone --depth 1 --branch "$BRANCH_NAME" --single-branch "$REPO_URL" "$TEMP_DIR" 2>/dev/null || {
+    # If branch doesn't exist remotely, clone and create locally
+    echo -e "${YELLOW}⚠️  Branch not found remotely, cloning full repo...${NC}"
+    git clone "$REPO_URL" "$TEMP_DIR"
+    cd "$TEMP_DIR"
+    git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME"
+}
+
+cd "$TEMP_DIR"
+
+# Copy .env and other config files if they exist
+echo -e "${BLUE}📋 Copying configuration files...${NC}"
+for config_file in .env .env.local .env.development .env.production .npmrc .yarnrc .prettierrc; do
+    if [ -f "$REPO_PATH/$config_file" ]; then
+        cp "$REPO_PATH/$config_file" "$TEMP_DIR/"
+        echo -e "${GREEN}✓${NC} Copied $config_file"
+    fi
+done
+
+# Install dependencies if package.json exists
+if [ -f "package.json" ]; then
+    echo -e "${BLUE}📦 Install dependencies? (y/N)${NC}"
+    read -t 5 -n 1 install_deps || install_deps="n"
+    echo
+    if [[ $install_deps =~ ^[Yy]$ ]]; then
+        if [ -f "pnpm-lock.yaml" ]; then
+            echo -e "${BLUE}Installing with pnpm...${NC}"
+            pnpm install
+        elif [ -f "yarn.lock" ]; then
+            echo -e "${BLUE}Installing with yarn...${NC}"
+            yarn install
+        else
+            echo -e "${BLUE}Installing with npm...${NC}"
+            npm install
+        fi
+    fi
+fi
+
+echo -e "${GREEN}✓ Ready!${NC}"
+echo -e "${BLUE}🚀 Opening Claude Code...${NC}"
+
+# Open Claude Code
+claude "$TEMP_DIR"
+
+# Cleanup message
+echo ""
+echo -e "${BLUE}💡 To cleanup later:${NC}"
+echo -e "   rm -rf $TEMP_DIR"
+echo -e "${BLUE}💡 Or use:${NC}"
+echo -e "   claude-multi-cleanup"
