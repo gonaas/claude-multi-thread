@@ -100,3 +100,6 @@ echo -e "${BLUE}💡 To cleanup later:${NC}"
 echo -e "   rm -rf $TEMP_DIR"
 echo -e "${BLUE}💡 Or use:${NC}"
 echo -e "   claude-multi-cleanup"
+
+# Print temp dir for the shell function to use
+echo "TEMP_DIR=$TEMP_DIR"

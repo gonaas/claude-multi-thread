@@ -9,8 +9,14 @@ NC='\033[0m'
 
 echo -e "${BLUE}🧹 Searching for temporary claude-multi-branch directories...${NC}"
 
+# Determine the actual temp directory (handles macOS symlink)
+ACTUAL_TMP="/tmp"
+if [ -L "/tmp" ]; then
+    ACTUAL_TMP=$(readlink -f /tmp 2>/dev/null || echo "/private/tmp")
+fi
+
 # Find temporary directories
-TEMP_DIRS=$(find /tmp -maxdepth 1 -type d -name "claude-multi-branch-*" 2>/dev/null)
+TEMP_DIRS=$(find "$ACTUAL_TMP" -maxdepth 1 -type d -name "claude-multi-branch-*" 2>/dev/null)
 
 if [ -z "$TEMP_DIRS" ]; then
     echo -e "${GREEN}✓ No temporary directories to cleanup${NC}"

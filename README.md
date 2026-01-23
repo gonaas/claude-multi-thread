@@ -63,6 +63,29 @@ cmo "main,develop,feature/test"
 cmo "main,develop" ~/projects/my-app
 ```
 
+### List Active Instances
+
+```bash
+# List all temporary branch instances
+claude-multi-list
+
+# Short alias
+cml
+```
+
+### Navigate to Instance
+
+```bash
+# Go to instance by number
+claude-multi-goto 1
+
+# Short alias
+cmg 1
+
+# Or just list instances
+cmg
+```
+
 ### Cleanup
 
 ```bash
@@ -75,10 +98,32 @@ cmc
 
 ## 📖 Examples
 
+### Typical Workflow
+```bash
+# 1. Open multiple branches
+cmo "main,develop,feature/new-feature"
+
+# 2. List all instances
+cml
+
+# 3. Navigate to specific instance
+cmg 2
+
+# 4. Work on the branch...
+
+# 5. When done, cleanup
+cmc
+```
+
 ### Compare implementations between branches
 ```bash
 cmb main ~/projects/my-app &
 cmb develop ~/projects/my-app &
+
+# List and navigate between them
+cml
+cmg 1  # Go to main
+cmg 2  # Go to develop
 ```
 
 ### Work on multiple features simultaneously
@@ -133,6 +178,8 @@ Each instance is completely independent and isolated from your main repository.
 |---------|-------|-------------|
 | `claude-multi-branch` | `cmb` | Open branch in temporary instance |
 | `claude-multi-open` | `cmo` | Open multiple branches |
+| `claude-multi-list` | `cml` | List all active instances |
+| `claude-multi-goto` | `cmg` | Navigate to instance by number |
 | `claude-multi-cleanup` | `cmc` | Cleanup temporary directories |
 | `claude-multi-help` | `cmh` | Show help |
 

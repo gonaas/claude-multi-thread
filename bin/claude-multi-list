@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# Claude Code Multi-Branch Lister
+# Lists all temporary branch clones
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+GRAY='\033[0;90m'
+NC='\033[0m' # No Color
+
+# Determine the actual temp directory (handles macOS symlink)
+ACTUAL_TMP="/tmp"
+if [ -L "/tmp" ]; then
+    ACTUAL_TMP=$(readlink -f /tmp 2>/dev/null || echo "/private/tmp")
+fi
+
+# Find all temporary directories
+TEMP_DIRS=($ACTUAL_TMP/claude-multi-branch-*)
+
+# Check if any directories exist
+if [ ${#TEMP_DIRS[@]} -eq 0 ] || [ ! -d "${TEMP_DIRS[0]}" ]; then
+    echo -e "${YELLOW}No temporary branch clones found${NC}"
+    echo ""
+    echo "Create one with: claude-multi-branch <branch-name>"
+    exit 0
+fi
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}   Claude Multi-Branch - Active Instances${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+index=1
+for dir in "${TEMP_DIRS[@]}"; do
+    if [ -d "$dir" ]; then
+        # Extract repo name and branch from directory name
+        basename=$(basename "$dir")
+        # Remove the prefix "claude-multi-branch-"
+        info=${basename#claude-multi-branch-}
+
+        # Extract components: repo-branch-pid
+        # Find the last dash (before PID)
+        pid=${info##*-}
+        info_without_pid=${info%-*}
+
+        # Find the second-to-last dash (before branch)
+        branch=${info_without_pid##*-}
+        repo=${info_without_pid%-*}
+
+        # Get directory size
+        size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+
+        # Get last modified time
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$dir" 2>/dev/null || echo "unknown")
+        else
+            # Linux
+            modified=$(stat -c "%y" "$dir" 2>/dev/null | cut -d'.' -f1 || echo "unknown")
+        fi
+
+        # Get current branch from git
+        actual_branch="unknown"
+        if [ -d "$dir/.git" ]; then
+            actual_branch=$(cd "$dir" && git branch --show-current 2>/dev/null || echo "unknown")
+        fi
+
+        # Print info
+        echo -e "${CYAN}[$index]${NC} ${GREEN}$repo${NC} ${GRAY}→${NC} ${YELLOW}$actual_branch${NC}"
+        echo -e "    ${GRAY}Path:${NC}     $dir"
+        echo -e "    ${GRAY}Size:${NC}     $size"
+        echo -e "    ${GRAY}Modified:${NC} $modified"
+        echo -e "    ${GRAY}PID:${NC}      $pid"
+        echo ""
+
+        index=$((index + 1))
+    fi
+done
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GRAY}Total instances: $((index - 1))${NC}"
+echo ""
+echo -e "${BLUE}Commands:${NC}"
+echo -e "  ${GREEN}cmg <number>${NC}     Go to instance by number"
+echo -e "  ${GREEN}cmc${NC}             Cleanup all instances"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
