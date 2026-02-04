@@ -27,6 +27,8 @@ cmb() {
 
 alias cmc='claude-multi-cleanup'
 alias cml='claude-multi-list'
+alias cms='claude-multi-start'
+alias cmls='claude-multi-list-stacks'
 
 # Function to quickly navigate to a temporary branch directory
 claude-multi-goto() {
@@ -112,16 +114,32 @@ claude-multi-help() {
 MAIN COMMANDS:
   claude-multi-branch <branch> [repo]     Open branch in temporary instance
   cmb <branch> [repo]                     Short alias for above
+  claude-multi-start <branch> [options]   Start multi-repo stack (RECOMMENDED)
+  cms <branch> [options]                  Short alias for above
   claude-multi-open <branch1,branch2>     Open multiple branches
   cmo <branch1,branch2>                   Short alias for above
   claude-multi-list                       List all temporary instances
   cml                                     Short alias for above
+  claude-multi-list-stacks                List all multi-repo stacks
+  cmls                                    Short alias for above
   claude-multi-goto <number>              Go to instance by number
   cmg <number>                            Short alias for above
   claude-multi-cleanup                    Cleanup temporary directories
   cmc                                     Short alias for cleanup
 
 EXAMPLES:
+  # Start multi-repo stack (interactive selection)
+  cms feature/auth
+
+  # Start with predefined profile
+  cms feature/payment --profile full-stack
+
+  # Start with manual repo selection
+  cms develop --repos nuela-next,nuela-apiv2
+
+  # List all active stacks
+  cmls
+
   # Open feature branch in current directory
   cmb feature/new-feature
 

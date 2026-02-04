@@ -7,7 +7,19 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${BLUE}🧹 Searching for temporary claude-multi-branch directories...${NC}"
+# Load configuration if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_DIR="$(dirname "$SCRIPT_DIR")/config"
+REPOS_CONF="$CONFIG_DIR/repos.conf"
+
+if [ -f "$REPOS_CONF" ]; then
+    source "$REPOS_CONF"
+fi
+
+# Set default SYMLINK_DIR
+SYMLINK_DIR="${SYMLINK_DIR:-$HOME/dev}"
+
+echo -e "${BLUE}🧹 Searching for temporary directories...${NC}"
 
 # Determine the actual temp directory (handles macOS symlink)
 ACTUAL_TMP="/tmp"
@@ -15,30 +27,61 @@ if [ -L "/tmp" ]; then
     ACTUAL_TMP=$(readlink -f /tmp 2>/dev/null || echo "/private/tmp")
 fi
 
-# Find temporary directories
-TEMP_DIRS=$(find "$ACTUAL_TMP" -maxdepth 1 -type d -name "claude-multi-branch-*" 2>/dev/null)
+# Find temporary directories (both branch and stack)
+TEMP_DIRS=$(find "$ACTUAL_TMP" -maxdepth 1 -type d \( -name "claude-multi-branch-*" -o -name "claude-multi-stack-*" \) 2>/dev/null)
 
-if [ -z "$TEMP_DIRS" ]; then
-    echo -e "${GREEN}✓ No temporary directories to cleanup${NC}"
+# Find symlinks that point to claude-multi-branch or claude-multi-stack dirs
+SYMLINKS=""
+if [ -d "$SYMLINK_DIR" ]; then
+    SYMLINKS=$(find "$SYMLINK_DIR" -maxdepth 1 -type l 2>/dev/null | while read link; do
+        target=$(readlink "$link" 2>/dev/null)
+        if [[ "$target" == *"claude-multi-branch-"* ]] || [[ "$target" == *"claude-multi-stack-"* ]]; then
+            echo "$link"
+        fi
+    done)
+fi
+
+if [ -z "$TEMP_DIRS" ] && [ -z "$SYMLINKS" ]; then
+    echo -e "${GREEN}✓ No temporary directories or symlinks to cleanup${NC}"
     exit 0
 fi
 
-echo -e "${BLUE}Directories found:${NC}"
-echo "$TEMP_DIRS" | while read dir; do
-    SIZE=$(du -sh "$dir" 2>/dev/null | cut -f1)
-    echo -e "  ${RED}•${NC} $dir (${SIZE})"
-done
+if [ -n "$TEMP_DIRS" ]; then
+    echo -e "${BLUE}Temporary directories found:${NC}"
+    echo "$TEMP_DIRS" | while read dir; do
+        SIZE=$(du -sh "$dir" 2>/dev/null | cut -f1)
+        echo -e "  ${RED}•${NC} $dir (${SIZE})"
+    done
+fi
+
+if [ -n "$SYMLINKS" ]; then
+    echo -e "${BLUE}Symlinks found in $SYMLINK_DIR:${NC}"
+    echo "$SYMLINKS" | while read link; do
+        target=$(readlink "$link" 2>/dev/null)
+        echo -e "  ${RED}•${NC} $(basename "$link") -> $target"
+    done
+fi
 
 echo ""
-echo -e "${BLUE}Delete all these directories? (y/N)${NC}"
+echo -e "${BLUE}Delete all these directories and symlinks? (y/N)${NC}"
 read -n 1 confirm
 echo
 
 if [[ $confirm =~ ^[Yy]$ ]]; then
-    echo "$TEMP_DIRS" | while read dir; do
-        rm -rf "$dir"
-        echo -e "${GREEN}✓${NC} Deleted: $dir"
-    done
+    if [ -n "$TEMP_DIRS" ]; then
+        echo "$TEMP_DIRS" | while read dir; do
+            rm -rf "$dir"
+            echo -e "${GREEN}✓${NC} Deleted directory: $dir"
+        done
+    fi
+
+    if [ -n "$SYMLINKS" ]; then
+        echo "$SYMLINKS" | while read link; do
+            rm "$link"
+            echo -e "${GREEN}✓${NC} Deleted symlink: $link"
+        done
+    fi
+
     echo -e "${GREEN}✓ Cleanup completed${NC}"
 else
     echo -e "${BLUE}Cleanup cancelled${NC}"

@@ -1,0 +1,191 @@
+#!/bin/bash
+# repos.conf.examples
+# Configuration examples for different setups
+# Copy this file to repos.conf and customize for your needs
+
+# ============================================================================
+# EXAMPLE 1: Standard ~/dev setup (Default)
+# ============================================================================
+
+WORKSPACE_DIR="$HOME/dev"
+SYMLINK_DIR="${SYMLINK_DIR:-$WORKSPACE_DIR}"
+
+declare -A REPOS=(
+    ["my-frontend"]="$WORKSPACE_DIR/my-frontend:3000"
+    ["my-backend"]="$WORKSPACE_DIR/my-backend:3001"
+)
+
+declare -A PROFILES=(
+    ["full-stack"]="my-frontend,my-backend"
+)
+
+ENV_MAPPINGS=(
+    "my-frontend:API_URL:my-backend:0"
+)
+
+PORT_INCREMENT=1000
+
+# ============================================================================
+# EXAMPLE 2: Using ~/projects directory
+# ============================================================================
+
+# WORKSPACE_DIR="$HOME/projects"
+# SYMLINK_DIR="${SYMLINK_DIR:-$WORKSPACE_DIR}"
+#
+# declare -A REPOS=(
+#     ["web-app"]="$WORKSPACE_DIR/web-app:3000"
+#     ["api-server"]="$WORKSPACE_DIR/api-server:8080"
+#     ["auth-service"]="$WORKSPACE_DIR/auth-service:8081"
+# )
+#
+# declare -A PROFILES=(
+#     ["web"]="web-app,api-server"
+#     ["backend"]="api-server,auth-service"
+#     ["all"]="web-app,api-server,auth-service"
+# )
+#
+# ENV_MAPPINGS=(
+#     "web-app:REACT_APP_API_URL:api-server:0"
+#     "web-app:REACT_APP_AUTH_URL:auth-service:0"
+#     "api-server:AUTH_SERVICE_URL:auth-service:0"
+# )
+
+# ============================================================================
+# EXAMPLE 3: Mixed locations
+# ============================================================================
+
+# WORKSPACE_DIR="$HOME/code"
+# SYMLINK_DIR="$HOME/dev"  # Symlinks in different location
+#
+# declare -A REPOS=(
+#     # Work projects in ~/work
+#     ["work-frontend"]="$HOME/work/frontend:3000"
+#     ["work-backend"]="$HOME/work/backend:3001"
+#
+#     # Personal projects in ~/code
+#     ["personal-blog"]="$WORKSPACE_DIR/blog:4000"
+#     ["personal-api"]="$WORKSPACE_DIR/blog-api:4001"
+# )
+#
+# declare -A PROFILES=(
+#     ["work"]="work-frontend,work-backend"
+#     ["personal"]="personal-blog,personal-api"
+# )
+#
+# ENV_MAPPINGS=(
+#     "work-frontend:API_URL:work-backend:0"
+#     "personal-blog:API_URL:personal-api:0"
+# )
+
+# ============================================================================
+# EXAMPLE 4: Monorepo setup
+# ============================================================================
+
+# WORKSPACE_DIR="$HOME/workspace"
+# SYMLINK_DIR="${SYMLINK_DIR:-$WORKSPACE_DIR}"
+#
+# declare -A REPOS=(
+#     ["monorepo"]="$WORKSPACE_DIR/my-monorepo:3000"
+# )
+#
+# declare -A PROFILES=(
+#     ["main"]="monorepo"
+# )
+#
+# ENV_MAPPINGS=()
+
+# ============================================================================
+# EXAMPLE 5: Microservices architecture
+# ============================================================================
+
+# WORKSPACE_DIR="$HOME/microservices"
+# SYMLINK_DIR="${SYMLINK_DIR:-$WORKSPACE_DIR}"
+#
+# declare -A REPOS=(
+#     ["gateway"]="$WORKSPACE_DIR/api-gateway:3000"
+#     ["user-service"]="$WORKSPACE_DIR/user-service:3001"
+#     ["order-service"]="$WORKSPACE_DIR/order-service:3002"
+#     ["payment-service"]="$WORKSPACE_DIR/payment-service:3003"
+#     ["notification-service"]="$WORKSPACE_DIR/notification-service:3004"
+# )
+#
+# declare -A PROFILES=(
+#     ["core"]="gateway,user-service,order-service"
+#     ["backend"]="user-service,order-service,payment-service"
+#     ["all"]="gateway,user-service,order-service,payment-service,notification-service"
+# )
+#
+# ENV_MAPPINGS=(
+#     "gateway:USER_SERVICE_URL:user-service:0"
+#     "gateway:ORDER_SERVICE_URL:order-service:0"
+#     "gateway:PAYMENT_SERVICE_URL:payment-service:0"
+#     "order-service:PAYMENT_SERVICE_URL:payment-service:0"
+#     "order-service:NOTIFICATION_SERVICE_URL:notification-service:0"
+# )
+#
+# PORT_INCREMENT=1000
+
+# ============================================================================
+# EXAMPLE 6: Different technologies
+# ============================================================================
+
+# WORKSPACE_DIR="$HOME/projects"
+# SYMLINK_DIR="${SYMLINK_DIR:-$WORKSPACE_DIR}"
+#
+# declare -A REPOS=(
+#     # Next.js frontend
+#     ["nextjs-app"]="$WORKSPACE_DIR/nextjs-app:3000"
+#
+#     # Express backend
+#     ["express-api"]="$WORKSPACE_DIR/express-api:3001"
+#
+#     # Python ML service
+#     ["ml-service"]="$WORKSPACE_DIR/ml-service:5000"
+#
+#     # Go websocket service
+#     ["ws-service"]="$WORKSPACE_DIR/ws-service:8080"
+# )
+#
+# declare -A PROFILES=(
+#     ["web"]="nextjs-app,express-api"
+#     ["backend"]="express-api,ml-service,ws-service"
+#     ["full"]="nextjs-app,express-api,ml-service,ws-service"
+# )
+#
+# ENV_MAPPINGS=(
+#     "nextjs-app:NEXT_PUBLIC_API_URL:express-api:0"
+#     "nextjs-app:NEXT_PUBLIC_WS_URL:ws-service:0"
+#     "express-api:ML_SERVICE_URL:ml-service:0"
+# )
+
+# ============================================================================
+# TIPS FOR CUSTOMIZATION
+# ============================================================================
+
+# 1. WORKSPACE_DIR: Where your repositories are located
+#    - Can be any directory on your system
+#    - Use $HOME for portability across machines
+#
+# 2. SYMLINK_DIR: Where symlinks will be created
+#    - Defaults to WORKSPACE_DIR if not specified
+#    - Can be different if you want symlinks elsewhere
+#
+# 3. REPOS: Define each repository with format "name:path:port"
+#    - Name: Identifier for the repo (used in commands)
+#    - Path: Absolute path to the repository
+#    - Port: Default port for development server
+#
+# 4. PROFILES: Group repositories that work together
+#    - Makes it easy to start multiple related repos
+#    - Format: "profile-name=repo1,repo2,repo3"
+#
+# 5. ENV_MAPPINGS: Auto-update environment variables
+#    - Format: "source:ENV_VAR:target:offset"
+#    - Updates URLs between services automatically
+#
+# 6. PORT_INCREMENT: How much to increment ports per instance
+#    - Default: 1000
+#    - Instance 0: base port
+#    - Instance 1: base + 1000
+#    - Instance 2: base + 2000
+#    - etc.

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# List active multi-repo stacks
+
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo -e "${BLUE}📦 Active Multi-Repo Stacks${NC}"
+echo ""
+
+# Determine the actual temp directory (handles macOS symlink)
+ACTUAL_TMP="/tmp"
+if [ -L "/tmp" ]; then
+    ACTUAL_TMP=$(readlink -f /tmp 2>/dev/null || echo "/private/tmp")
+fi
+
+# Find stack directories
+STACK_DIRS=$(find "$ACTUAL_TMP" -maxdepth 1 -type d -name "claude-multi-stack-*" 2>/dev/null | sort)
+
+if [ -z "$STACK_DIRS" ]; then
+    echo -e "${YELLOW}No active stacks found${NC}"
+    echo ""
+    echo "Use 'cms <branch>' to create a multi-repo stack"
+    exit 0
+fi
+
+# Display each stack
+INDEX=1
+echo "$STACK_DIRS" | while read dir; do
+    if [ -f "$dir/.session-info" ]; then
+        source "$dir/.session-info"
+
+        echo -e "${CYAN}Stack #$INDEX${NC}"
+        echo -e "  ${BLUE}Instance:${NC} $INSTANCE_NUM"
+        echo -e "  ${BLUE}Branch:${NC} $BRANCH_NAME"
+        echo -e "  ${BLUE}Created:${NC} $CREATED_AT"
+        echo -e "  ${BLUE}Location:${NC} $dir"
+        echo -e "  ${BLUE}Repositories:${NC}"
+
+        # List repos in this stack
+        for repo_dir in "$dir"/*; do
+            if [ -d "$repo_dir/.git" ]; then
+                repo_name=$(basename "$repo_dir")
+                echo -e "    ${GREEN}•${NC} $repo_name"
+            fi
+        done
+
+        echo ""
+    fi
+
+    ((INDEX++))
+done
+
+echo -e "${BLUE}💡 Commands:${NC}"
+echo "  cms <branch>        - Create new stack"
+echo "  cmc                 - Cleanup all stacks"
+echo ""
